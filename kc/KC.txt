@@ -1,0 +1,246 @@
+Attribute VB_Name = "KC"
+Sub calculate_KC()
+Attribute calculate_KC.VB_ProcData.VB_Invoke_Func = " \n14"
+
+    Sheets("Sheet1").Select
+    Sheets("Sheet1").Name = "исх"
+    
+    Range("A1").Select
+    Dim endRowIsx As Long
+    endRowIsx = Cells(Rows.Count, 1).End(xlUp).Row
+    
+    Range("B2").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    
+    ' удаляем пустые строки
+    Rows("1:1").Select
+    Selection.AutoFilter
+    ActiveSheet.Range("$A$1:$I$" + CStr(endRowIsx)).AutoFilter Field:=5, Criteria1:="="
+    Call delete
+    
+    Rows("1:1").Select
+    Selection.AutoFilter
+    Selection.AutoFilter
+    
+    ' рксн
+    Sheets("Sheet2").Select
+    Sheets("Sheet2").Name = "рксн"
+    Sheets("исх").Select
+    ActiveSheet.Range("$A$1:$I$" + CStr(endRowIsx)).AutoFilter Field:=5, Criteria1:="Районный коэффициент"
+    Range("A1").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Sheets("рксн").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Columns("A:I").Select
+    Columns("A:I").EntireColumn.AutoFit
+    
+    Sheets("исх").Select
+    Application.CutCopyMode = False
+    Call delete
+    
+    Rows("1:1").Select
+    Selection.AutoFilter
+    Selection.AutoFilter
+    
+    ' интенсивность
+    Sheets("Sheet3").Select
+    Sheets("Sheet3").Name = "инт"
+    Sheets("исх").Select
+    ActiveSheet.Range("$A$1:$I$" + CStr(endRowIsx)).AutoFilter Field:=5, Criteria1:="Надб. интенс. (ГУ-тариф)"
+    Range("A1").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Sheets("инт").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Columns("A:I").Select
+    Columns("A:I").EntireColumn.AutoFit
+    
+    Sheets("исх").Select
+    Application.CutCopyMode = False
+    Call delete
+    
+    Rows("1:1").Select
+    Selection.AutoFilter
+    Selection.AutoFilter
+    
+    ' удаляем надбавку за дист. работу
+    ActiveSheet.Range("$A$1:$I$" + CStr(endRowIsx)).AutoFilter Field:=5, Criteria1:="Надб. за дист. работу"
+    Call delete
+    
+    Rows("1:1").Select
+    Selection.AutoFilter
+    Selection.AutoFilter
+    
+    Range("A1").Select
+    Dim endRowNew As Long
+    endRowNew = Cells(Rows.Count, 1).End(xlUp).Row
+    
+   ' схлопываем все данные
+   Columns("E:E").Select
+    Selection.delete Shift:=xlToLeft
+    Range("E1").Select
+    ActiveCell.FormulaR1C1 = "Тариф"
+    
+    ' подтягиваем интенсивность
+    Range("F1").Select
+    ActiveCell.FormulaR1C1 = "Инт"
+    Range("F2").Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUMIFS(инт!C,инт!C[-4],C[-4],инт!C[2],C[1])"
+    Range("E2").Select
+    Selection.Copy
+    Range("F2").Select
+    Selection.PasteSpecial Paste:=xlPasteFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+    Selection.AutoFill Destination:=Range("F2:F" + CStr(endRowNew))
+    
+    ' подтягиваем рксн
+    Columns("G:G").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("G1").Select
+    ActiveCell.FormulaR1C1 = "РКСН"
+    Range("G2").Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUMIFS(рксн!C[-1],рксн!C[-5],C[-5],рксн!C[1],C[1])"
+    Range("F2").Select
+    Selection.Copy
+    Range("G2").Select
+    Selection.PasteSpecial Paste:=xlPasteFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+    Selection.AutoFill Destination:=Range("G2:G" + CStr(endRowNew))
+    
+    ' вычисляем коэффициент рксн
+    Columns("H:H").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("H1").Select
+    ActiveCell.FormulaR1C1 = "РКСН коэф"
+    Range("H2").Select
+    ActiveCell.FormulaR1C1 = "=1+RC[-1]/(RC[-3]+RC[-2])"
+    Range("H2").Select
+    Selection.AutoFill Destination:=Range("H2:H" + CStr(endRowNew))
+
+    ' вычисляем чтс с рксн
+    Columns("I:I").Select
+    Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("I1").Select
+    ActiveCell.FormulaR1C1 = "ЧТС с РКСН"
+    Range("I2").Select
+    Columns("I:I").EntireColumn.AutoFit
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=(RC[-4]+RC[-3])*RC[-1]"
+    Range("I2").Select
+    Selection.AutoFill Destination:=Range("I2:I" + CStr(endRowNew))
+
+    Range("I1").Select
+    With Selection.Interior
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+        .ThemeColor = xlThemeColorAccent6
+        .TintAndShade = 0.599993896298105
+        .PatternTintAndShade = 0
+    End With
+    
+    ' делаем проверки
+    Range("M1").Select
+    Selection.FormulaR1C1 = "="
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUM(C[-7])=SUM(инт!C[-7])"
+    
+    Range("N1").Select
+    Selection.FormulaR1C1 = "="
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUM(C[-7])=SUM(рксн!C[-8])"
+    
+    Range("O1").Select
+    Selection.FormulaR1C1 = "="
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=SUM(C[-10]:C[-8])=SUM(C[-6])"
+
+    Range("M1:O1").Select
+    With Selection.Interior
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+        .ThemeColor = xlThemeColorAccent6
+        .TintAndShade = 0.599993896298105
+        .PatternTintAndShade = 0
+    End With
+    
+    ' наводим красоту
+    Cells.Select
+    With Selection.Font
+        .Name = "Calibri Light"
+        .Size = 10
+        .Strikethrough = False
+        .Superscript = False
+        .Subscript = False
+        .OutlineFont = False
+        .Shadow = False
+        .Underline = xlUnderlineStyleNone
+        .ColorIndex = xlAutomatic
+        .TintAndShade = 0
+        .ThemeFont = xlThemeFontMajor
+    End With
+    
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "МВЗ"
+    Range("B1").Select
+    ActiveCell.FormulaR1C1 = "ТН"
+    Range("C1").Select
+    ActiveCell.FormulaR1C1 = "ФИО"
+    Columns("A:K").Select
+    Columns("A:K").EntireColumn.AutoFit
+    
+    Range("A1").Select
+    With ActiveWindow
+        .SplitColumn = 0
+        .SplitRow = 1
+    End With
+    ActiveWindow.FreezePanes = True
+    
+    Sheets("рксн").Select
+    Rows("1:1").Select
+    Selection.AutoFilter
+    With ActiveWindow
+        .SplitColumn = 0
+        .SplitRow = 1
+    End With
+    ActiveWindow.FreezePanes = True
+    Range("A1").Select
+    
+    Sheets("инт").Select
+    Rows("1:1").Select
+    Selection.AutoFilter
+    With ActiveWindow
+        .SplitColumn = 0
+        .SplitRow = 1
+    End With
+    ActiveWindow.FreezePanes = True
+    Range("A1").Select
+    
+    Sheets("исх").Select
+    Range("A1").Select
+    
+End Sub
+
+Public Function delete()
+
+    Range("A1").Select
+    Dim i&
+    i = 1
+    Do
+        If Not Rows(ActiveCell.Row + i).Hidden Then
+            ActiveCell.Offset(i).Select
+            Exit Do
+        End If
+        i = i + 1
+    Loop
+    Rows(CStr(Selection.Row) + ":" + CStr(Selection.Row)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.delete Shift:=xlUp
+
+End Function
